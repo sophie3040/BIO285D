@@ -227,7 +227,7 @@ write.csv2(seqtab.nochim, file = "seqtab_nochim.csv")
 It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to assign taxonomy to the sequence variants. The DADA2 package provides a native implementation of the naive Bayesian classifier method for this purpose. The *assignTaxonomy* function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least *minBoot* bootstrap confidence.
 
 ```{r Taxonomy assignation, echo=TRUE, message=FALSE, warning=FALSE, include=FALSE}
-taxa <- assignTaxonomy(seqtab.nochim, "Euk_database.fa", taxLevels = c("Kingdom", "Supergroup", "Division", "Class", "Order", "Family", "Genus", "Species"), multithread = TRUE)
+taxa <- assignTaxonomy(seqtab.nochim, "Bact_database.fa", taxLevels = c("Kingdom", "Supergroup", "Division", "Class", "Order", "Family", "Genus", "Species"), multithread = TRUE)
 ```
 
 
