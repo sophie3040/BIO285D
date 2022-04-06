@@ -1,5 +1,5 @@
 
-#S¿THIS ARE THE LIBRARIES FOR ALL THE WORKFLOW
+#THIS ARE THE LIBRARIES FOR ALL THE WORKFLOW
 library(ggplot2)
 library(phyloseq); packageVersion("phyloseq")
 library(ShortRead)
@@ -38,7 +38,7 @@ fnRs <- fastqs[grepl("_R2.fastq", fastqs)] # Rvs
 
 # Get sample names from the first part of the forward read filenames
 #sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
-sample.names <- c("LOM_70", "LOM_71", "LOM_72", "LOM_73", "LOM_74", "LOM_75", "LOM_76", "LOM_77", "LOM_78", "LOM_79", "LOM_80", "LOM_81", "LOM_82", "LOM_83", "LOM_84")
+#sample.names <- c("LOM_70", "LOM_71", "LOM_72", "LOM_73", "LOM_74", "LOM_75", "LOM_76", "LOM_77", "LOM_78", "LOM_79", "LOM_80", "LOM_81", "LOM_82", "LOM_83", "LOM_84")
 sample.names <- sapply(strsplit(basename(fnFs), "_"), '[',3)
 str(sample.names)
 # Para especificar de manera concreta donde se encuentras las secuencias Fw y Rv
@@ -269,10 +269,48 @@ write.csv2(asv_tab, file = "ASVs_counts.csv")
 ```
 asv_tab
 
-
 ### END OF DADA2###
-
-
+#####
 ####PHYLOSEQ####
+#Create phylo object
+#Extract sequences from DADA2 output
+sequences<-getSequences(seqtab.nochin)
+names(sequences)<-sequences
+
+#Run Sequence Alignment (MSA) using DECIPHER
+
+alignment <- AlignSeqs(DNAStringSet(sequences), anchor=NA)
+
+#Change sequence alignment output into a phyDat structure
+
+phang.align <- phyDat(as(alignment, "matrix"), type="DNA")
+
+#Create distance matrix
+dm <- dist.ml(phang.align)
+
+#Perform Neighbor joining
+
+treeNJ <- NJ(dm) # Note, tip order != sequence order
+
+#Internal maximum likelihood
+
+fit = pml(treeNJ, data=phang.align)
+
+#negative edges length changed to 0!
+
+fitGTR <- update(fit, k=4, inv=0.2)
+fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
+                    rearrangement = "stochastic", control = pml.control(trace = 0))
+
+#Import into phyloseq
+ps <- phyloseq(otu_table(seqtab.nochin, taxa_are_rows=FALSE), 
+               tax_table(taxa),phy_tree(fitGTR$tree))
+ps
+
+#Currently, the phylogenetic tree is not rooted Though it is not necessary here, we will need to root the tree if we want to calculate any phylogeny based diversity metrics (like Unifrac)
+
+set.seed(711)
+phy_tree(ps) <- root(phy_tree(ps), sample(taxa_names(ps), 1), resolve.root = TRUE)
+is.rooted(phy_tree(ps))
 
 
